@@ -1,3 +1,35 @@
 node_modules/
 dist/
+
+# ── Secrets & API Keys ────────────────────────────────────────────────
 .env
+.env.*
+*.env
+!.env.example
+.env.local
+.env.*.local
+secrets/
+*.key
+*.pem
+*.secret
+*credentials*
+*api_key*
+*apikey*
+
+# ── Logs ──────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS / IDE ──────────────────────────────────────────────────────────
+.DS_Store
+._*
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+
+# ── Build / Cache ─────────────────────────────────────────────────────
+.cache/
+.wrangler/
+.dev.vars
