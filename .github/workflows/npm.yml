@@ -1,0 +1,58 @@
+name: Publish to npm
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to publish (e.g. v1.0.0)"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          else
+            git fetch --tags
+            TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          fi
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+          if [ -z "$TAG" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.tag.outputs.skip != 'true'
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        if: steps.tag.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.tag.outputs.skip != 'true'
+        run: npm run build
+
+      - name: Publish
+        if: steps.tag.outputs.skip != 'true'
+        run: npm publish --provenance
