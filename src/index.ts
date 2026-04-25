@@ -53,8 +53,14 @@ async function main() {
 			}),
 		);
 
+		// Liveness probe (Dokploy/Docker healthcheck) MUST be registered before
+		// the auth middleware so it is reachable without a Bearer token.
+		app.get("/health", (c) =>
+			c.json({ status: "healthy", service: "canlii-mcp" }),
+		);
+
 		if (authToken) {
-			app.use("*", async (c, next) => {
+			app.use("/mcp", async (c, next) => {
 				const header = c.req.header("authorization") ?? "";
 				if (header !== `Bearer ${authToken}`) {
 					return c.text("Unauthorized", 401);
@@ -63,7 +69,7 @@ async function main() {
 			});
 		}
 
-		app.use("*", async (c, next) => {
+		app.use("/mcp", async (c, next) => {
 			const ct = c.req.header("content-type") ?? "";
 			if (ct.includes("application/json")) {
 				try {
@@ -75,11 +81,6 @@ async function main() {
 			}
 			return next();
 		});
-
-		// Lightweight liveness probe (Dokploy/Docker healthcheck).
-		app.get("/health", (c) =>
-			c.json({ status: "healthy", service: "canlii-mcp" }),
-		);
 
 		app.all("/mcp", async (c) => {
 			// BYOK: prefer client-supplied CanLII key from request header,

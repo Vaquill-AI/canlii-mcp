@@ -27,7 +27,12 @@ app.use(
 	}),
 );
 
-app.use("*", async (c, next) => {
+// Liveness probe MUST be registered before the auth middleware.
+app.get("/health", (c) =>
+	c.json({ status: "healthy", service: "canlii-mcp" }),
+);
+
+app.use("/mcp", async (c, next) => {
 	const token = c.env.MCP_AUTH_TOKEN;
 	if (token) {
 		const header = c.req.header("authorization") ?? "";
@@ -38,7 +43,7 @@ app.use("*", async (c, next) => {
 	return next();
 });
 
-app.use("*", async (c, next) => {
+app.use("/mcp", async (c, next) => {
 	const ct = c.req.header("content-type") ?? "";
 	if (ct.includes("application/json")) {
 		try {
@@ -50,10 +55,6 @@ app.use("*", async (c, next) => {
 	}
 	return next();
 });
-
-app.get("/health", (c) =>
-	c.json({ status: "healthy", service: "canlii-mcp" }),
-);
 
 app.all("/mcp", async (c) => {
 	// BYOK: prefer client-supplied key, fall back to env binding.
