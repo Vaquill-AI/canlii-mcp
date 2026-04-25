@@ -7,11 +7,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createServer } from "./server.js";
 
+// Server-side fallback key. Optional in HTTP mode (BYOK), required for stdio.
 const API_KEY = process.env.CANLII_API ?? "";
-if (!API_KEY) {
-	console.error("CANLII_API environment variable is required");
-	process.exit(1);
-}
 
 const transportArg = process.argv.includes("--transport")
 	? process.argv[process.argv.indexOf("--transport") + 1]
@@ -19,6 +16,12 @@ const transportArg = process.argv.includes("--transport")
 
 async function main() {
 	if (transportArg === "stdio") {
+		if (!API_KEY) {
+			console.error(
+				"CANLII_API environment variable is required for stdio transport",
+			);
+			process.exit(1);
+		}
 		const server = createServer(API_KEY);
 		const transport = new StdioServerTransport();
 		await server.connect(transport);
@@ -73,8 +76,27 @@ async function main() {
 			return next();
 		});
 
+		// Lightweight liveness probe (Dokploy/Docker healthcheck).
+		app.get("/health", (c) =>
+			c.json({ status: "healthy", service: "canlii-mcp" }),
+		);
+
 		app.all("/mcp", async (c) => {
-			const server = createServer(API_KEY);
+			// BYOK: prefer client-supplied CanLII key from request header,
+			// fall back to server env. This lets the hosted MCP charge calls
+			// against the caller's CanLII quota instead of the operator's.
+			const userKey = c.req.header("x-canlii-token")?.trim();
+			const effectiveKey = userKey || API_KEY;
+			if (!effectiveKey) {
+				return c.json(
+					{
+						error:
+							"No CanLII API key. Send 'X-CanLII-Token: <key>' on every MCP request, or set CANLII_API on the server.",
+					},
+					401,
+				);
+			}
+			const server = createServer(effectiveKey);
 			const transport = new WebStandardStreamableHTTPServerTransport();
 			await server.connect(transport);
 			return transport.handleRequest(c.req.raw, {

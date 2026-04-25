@@ -51,8 +51,24 @@ app.use("*", async (c, next) => {
 	return next();
 });
 
+app.get("/health", (c) =>
+	c.json({ status: "healthy", service: "canlii-mcp" }),
+);
+
 app.all("/mcp", async (c) => {
-	const server = createServer(c.env.CANLII_API);
+	// BYOK: prefer client-supplied key, fall back to env binding.
+	const userKey = c.req.header("x-canlii-token")?.trim();
+	const effectiveKey = userKey || c.env.CANLII_API;
+	if (!effectiveKey) {
+		return c.json(
+			{
+				error:
+					"No CanLII API key. Send 'X-CanLII-Token: <key>' on every MCP request, or bind CANLII_API on the worker.",
+			},
+			401,
+		);
+	}
+	const server = createServer(effectiveKey);
 	const transport = new WebStandardStreamableHTTPServerTransport();
 	await server.connect(transport);
 	return transport.handleRequest(c.req.raw, {

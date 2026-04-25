@@ -2,7 +2,47 @@
 
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for the [CanLII](https://www.canlii.org) Canadian legal information API. Gives AI assistants access to Canadian case law and legislation metadata across all federal, provincial, and territorial jurisdictions.
 
+> **Forked from** [tomilashy/canlii-mcp](https://github.com/tomilashy/canlii-mcp). This fork adds bring-your-own-key (BYOK) auth, a `/health` route, and a hosted endpoint at `canlii-mcp.vaquill.ai`. Tools are unchanged.
+
 > **Note:** The CanLII API provides metadata only — titles, citations, dates, keywords, and citation relationships. Full document text is not available through the API.
+
+## Use the hosted endpoint (no install)
+
+```
+https://canlii-mcp.vaquill.ai/mcp
+```
+
+Two headers are required for the hosted instance:
+- `Authorization: Bearer <MCP_AUTH_TOKEN>` — gates access to the MCP server itself
+- `X-CanLII-Token: <your_canlii_api_key>` — your CanLII key. Apply at [canlii.org/en/api/](https://www.canlii.org/en/feedback/feedback.html). The server never stores your key.
+
+### Claude Desktop / Claude Code
+
+```json
+{
+  "mcpServers": {
+    "canlii": {
+      "url": "https://canlii-mcp.vaquill.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_MCP_TOKEN",
+        "X-CanLII-Token": "YOUR_CANLII_API_KEY"
+      }
+    }
+  }
+}
+```
+
+### Cursor / VS Code / Windsurf
+
+Same pattern: any client supporting MCP streamable HTTP with custom headers works. For stdio-only clients use `mcp-remote` to proxy.
+
+## Authentication
+
+| Mode | Header | When |
+|---|---|---|
+| BYOK (preferred) | `X-CanLII-Token: <key>` | Hosted / shared deployments |
+| Server fallback | (env `CANLII_API`) | Self-hosted single-tenant. Required for stdio. |
+| MCP gate | `Authorization: Bearer <MCP_AUTH_TOKEN>` | Optional. Restricts who may use the hosted endpoint. |
 
 ## Tools
 
