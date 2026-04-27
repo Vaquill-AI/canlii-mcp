@@ -7,6 +7,9 @@ COPY src/ ./src/
 RUN npm run build
 
 FROM node:25-alpine
+# curl is required by the Dokploy/Docker healthcheck (curl -f /health).
+# Alpine images don't ship it by default.
+RUN apk add --no-cache curl
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
