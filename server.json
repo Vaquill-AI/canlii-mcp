@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Vaquill-AI/canlii-mcp",
   "title": "CanLII",
-  "description": "MCP server for the CanLII Canadian legal information API. Provides case law and legislation metadata across all federal, provincial, and territorial Canadian jurisdictions. MIT-licensed. Bring-your-own CanLII API key.",
+  "description": "MCP for CanLII: Canadian case law and legislation metadata across all federal and provincial jurisdictions.",
   "version": "0.1.0",
   "repository": {
     "url": "https://github.com/Vaquill-AI/canlii-mcp",
