@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Vaquill-AI/canlii-mcp",
+  "title": "CanLII",
+  "description": "MCP server for the CanLII Canadian legal information API. Provides case law and legislation metadata across all federal, provincial, and territorial Canadian jurisdictions. MIT-licensed. Bring-your-own CanLII API key.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/Vaquill-AI/canlii-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://canlii-mcp.vaquill.ai/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token gating access to the hosted CanLII MCP endpoint. Format: 'Bearer <token>'.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "X-CanLII-Token",
+          "description": "Your CanLII API key. Apply for one at https://www.canlii.org/en/feedback/feedback.html. The server never stores your key.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
