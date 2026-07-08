@@ -12,9 +12,8 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for th
 https://canlii-mcp.vaquill.ai/mcp
 ```
 
-Two headers are required for the hosted instance:
-- `Authorization: Bearer <MCP_AUTH_TOKEN>` — gates access to the MCP server itself
-- `X-CanLII-Token: <your_canlii_api_key>` — your CanLII key. Apply at [canlii.org/en/api/](https://www.canlii.org/en/feedback/feedback.html). The server never stores your key.
+The hosted instance is public. No Vaquill token is required. Send only one header:
+- `X-CanLII-Token: <your_canlii_api_key>` — your own CanLII key. Apply at [canlii.org/en/api/](https://www.canlii.org/en/feedback/feedback.html). The server never stores your key, and there is no server-side fallback key, so every call is charged to your own CanLII quota.
 
 ### Claude Desktop / Claude Code
 
@@ -24,7 +23,6 @@ Two headers are required for the hosted instance:
     "canlii": {
       "url": "https://canlii-mcp.vaquill.ai/mcp",
       "headers": {
-        "Authorization": "Bearer YOUR_MCP_TOKEN",
         "X-CanLII-Token": "YOUR_CANLII_API_KEY"
       }
     }
@@ -42,7 +40,7 @@ Same pattern: any client supporting MCP streamable HTTP with custom headers work
 |---|---|---|
 | BYOK (preferred) | `X-CanLII-Token: <key>` | Hosted / shared deployments |
 | Server fallback | (env `CANLII_API`) | Self-hosted single-tenant. Required for stdio. |
-| MCP gate | `Authorization: Bearer <MCP_AUTH_TOKEN>` | Optional. Restricts who may use the hosted endpoint. |
+| MCP gate | `Authorization: Bearer <MCP_AUTH_TOKEN>` | Optional, self-host only. The public hosted endpoint at `canlii-mcp.vaquill.ai` does **not** use it, so no bearer token is required. |
 
 ## Tools
 
