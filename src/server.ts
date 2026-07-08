@@ -1,43 +1,96 @@
+import { createHash } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Rate limiter — 2 req/s, 1 concurrent, 5 000/day
+// Rate limiter — PER CanLII key: 2 req/s, 1 concurrent, 5 000/day
+//
+// CanLII enforces its limits (2 req/s, 1 concurrent request, 5 000/day)
+// per API key. This server is bring-your-own-key and multi-tenant, so each
+// caller's key gets its own independent budget — one user can never consume
+// or serialize another user's quota. Buckets are keyed by a SHA-256 of the
+// key (raw keys are never retained in the map) and idle buckets are pruned
+// when the map grows large.
 // ---------------------------------------------------------------------------
 
-let dailyCount = 0;
-let dailyResetDate = new Date().toDateString();
-let lastRequestTime = 0;
-let inFlight = false;
-const queue: Array<{ resolve: () => void; reject: (e: Error) => void }> = [];
+interface RateBucket {
+	dailyCount: number;
+	dailyResetDate: string;
+	lastRequestTime: number;
+	inFlight: boolean;
+	queue: Array<{ resolve: () => void; reject: (e: Error) => void }>;
+}
 
-function resetDailyIfNeeded() {
+const DAILY_LIMIT = 5000;
+const MIN_INTERVAL_MS = 500; // 2 requests per second
+const MAX_BUCKETS = 5000; // safety cap against unbounded growth
+
+const buckets = new Map<string, RateBucket>();
+
+function bucketId(apiKey: string): string {
+	return createHash("sha256").update(apiKey).digest("hex");
+}
+
+function getBucket(apiKey: string): RateBucket {
+	const id = bucketId(apiKey);
+	let bucket = buckets.get(id);
+	if (!bucket) {
+		bucket = {
+			dailyCount: 0,
+			dailyResetDate: new Date().toDateString(),
+			inFlight: false,
+			lastRequestTime: 0,
+			queue: [],
+		};
+		buckets.set(id, bucket);
+		pruneBuckets();
+	}
+	return bucket;
+}
+
+// Drop idle buckets from previous days once the map grows too large. An idle
+// bucket has nothing in flight and an empty queue, so removing it can never
+// strand a waiting request.
+function pruneBuckets() {
+	if (buckets.size <= MAX_BUCKETS) return;
 	const today = new Date().toDateString();
-	if (today !== dailyResetDate) {
-		dailyCount = 0;
-		dailyResetDate = today;
+	for (const [id, b] of buckets) {
+		if (!b.inFlight && b.queue.length === 0 && b.dailyResetDate !== today) {
+			buckets.delete(id);
+		}
 	}
 }
 
-async function acquireSlot(): Promise<void> {
-	resetDailyIfNeeded();
-	if (dailyCount >= 5000) {
+function resetDailyIfNeeded(bucket: RateBucket) {
+	const today = new Date().toDateString();
+	if (today !== bucket.dailyResetDate) {
+		bucket.dailyCount = 0;
+		bucket.dailyResetDate = today;
+	}
+}
+
+async function acquireSlot(apiKey: string): Promise<void> {
+	const bucket = getBucket(apiKey);
+	resetDailyIfNeeded(bucket);
+	if (bucket.dailyCount >= DAILY_LIMIT) {
 		throw new Error("CanLII daily API limit (5 000 requests) reached");
 	}
-	if (inFlight) {
-		await new Promise<void>((resolve, reject) => queue.push({ reject, resolve }));
+	if (bucket.inFlight) {
+		await new Promise<void>((resolve, reject) => bucket.queue.push({ reject, resolve }));
 	}
-	inFlight = true;
+	bucket.inFlight = true;
 	const now = Date.now();
-	const wait = Math.max(0, 500 - (now - lastRequestTime));
+	const wait = Math.max(0, MIN_INTERVAL_MS - (now - bucket.lastRequestTime));
 	if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-	lastRequestTime = Date.now();
-	dailyCount++;
+	bucket.lastRequestTime = Date.now();
+	bucket.dailyCount++;
 }
 
-function releaseSlot() {
-	inFlight = false;
-	const next = queue.shift();
+function releaseSlot(apiKey: string) {
+	const bucket = buckets.get(bucketId(apiKey));
+	if (!bucket) return;
+	bucket.inFlight = false;
+	const next = bucket.queue.shift();
 	if (next) next.resolve();
 }
 
@@ -52,7 +105,7 @@ async function canliiRequest(
 	path: string,
 	params: Record<string, string> = {},
 ): Promise<unknown> {
-	await acquireSlot();
+	await acquireSlot(apiKey);
 	try {
 		const url = new URL(`${BASE_URL}${path}`);
 		url.searchParams.set("api_key", apiKey);
@@ -66,7 +119,7 @@ async function canliiRequest(
 		}
 		return await res.json();
 	} finally {
-		releaseSlot();
+		releaseSlot(apiKey);
 	}
 }
 

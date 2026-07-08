@@ -174,13 +174,13 @@ The MCP endpoint will be at `https://canlii-mcp.<your-subdomain>.workers.dev/mcp
 
 ## Rate Limits
 
-The server enforces CanLII's API limits automatically:
+The server enforces CanLII's API limits automatically, **per CanLII key**, so one caller's usage never throttles another's:
 
 - 1 request at a time
 - 2 requests per second
 - 5,000 requests per day
 
-Requests that exceed the daily limit return an error rather than hitting the API.
+These mirror CanLII's own per-key limits. Each `X-CanLII-Token` gets its own independent budget (keyed by a hash of the key; raw keys are never retained). Requests that exceed the daily limit return an error rather than hitting the API.
 
 ## Development
 
