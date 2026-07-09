@@ -83,16 +83,21 @@ async function main() {
 		});
 
 		app.all("/mcp", async (c) => {
-			// BYOK: prefer client-supplied CanLII key from request header,
-			// fall back to server env. This lets the hosted MCP charge calls
-			// against the caller's CanLII quota instead of the operator's.
-			const userKey = c.req.header("x-canlii-token")?.trim();
+			// BYOK: prefer the client-supplied CanLII key, from either the
+			// 'X-CanLII-Token' header or a '?token=' / '?canlii_token=' URL
+			// parameter. The query form lets header-less clients (the Claude
+			// Desktop / claude.ai connector UI) authenticate with just a URL.
+			// Fall back to the server env key if one is configured.
+			const userKey =
+				c.req.header("x-canlii-token")?.trim() ||
+				c.req.query("token")?.trim() ||
+				c.req.query("canlii_token")?.trim();
 			const effectiveKey = userKey || API_KEY;
 			if (!effectiveKey) {
 				return c.json(
 					{
 						error:
-							"No CanLII API key. Send 'X-CanLII-Token: <key>' on every MCP request, or set CANLII_API on the server.",
+							"No CanLII API key. Provide it as an 'X-CanLII-Token: <key>' header or a '?token=<key>' URL parameter on every MCP request, or set CANLII_API on the server.",
 					},
 					401,
 				);

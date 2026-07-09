@@ -12,8 +12,16 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for th
 https://canlii-mcp.vaquill.ai/mcp
 ```
 
-The hosted instance is public. No Vaquill token is required. Send only one header:
-- `X-CanLII-Token: <your_canlii_api_key>` — your own CanLII key. Apply at [canlii.org/en/api/](https://www.canlii.org/en/feedback/feedback.html). The server never stores your key, and there is no server-side fallback key, so every call is charged to your own CanLII quota.
+The hosted instance is public. No Vaquill token is required. Provide your own CanLII key one of two ways:
+
+- **Header (recommended, keeps the key out of the URL):** `X-CanLII-Token: <your_canlii_api_key>`
+- **URL parameter (simplest; works in header-less clients like the Claude Desktop connector UI and claude.ai web):** append `?token=<your_canlii_api_key>` to the URL:
+
+  ```
+  https://canlii-mcp.vaquill.ai/mcp?token=YOUR_CANLII_API_KEY
+  ```
+
+Apply for a key at [canlii.org/en/api/](https://www.canlii.org/en/feedback/feedback.html). The server never stores your key, and there is no server-side fallback key, so every call counts against your own CanLII quota.
 
 ### Claude Desktop / Claude Code
 
@@ -38,7 +46,8 @@ Same pattern: any client supporting MCP streamable HTTP with custom headers work
 
 | Mode | Header | When |
 |---|---|---|
-| BYOK (preferred) | `X-CanLII-Token: <key>` | Hosted / shared deployments |
+| BYOK header (preferred) | `X-CanLII-Token: <key>` | Hosted / shared deployments |
+| BYOK URL param | `?token=<key>` (or `?canlii_token=`) | Header-less clients: Claude Desktop connector UI, claude.ai web |
 | Server fallback | (env `CANLII_API`) | Self-hosted single-tenant. Required for stdio. |
 | MCP gate | `Authorization: Bearer <MCP_AUTH_TOKEN>` | Optional, self-host only. The public hosted endpoint at `canlii-mcp.vaquill.ai` does **not** use it, so no bearer token is required. |
 

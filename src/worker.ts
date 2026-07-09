@@ -57,14 +57,20 @@ app.use("/mcp", async (c, next) => {
 });
 
 app.all("/mcp", async (c) => {
-	// BYOK: prefer client-supplied key, fall back to env binding.
-	const userKey = c.req.header("x-canlii-token")?.trim();
+	// BYOK: prefer the client-supplied key, from either the 'X-CanLII-Token'
+	// header or a '?token=' / '?canlii_token=' URL parameter. The query form
+	// lets header-less clients (the Claude connector UI) authenticate with
+	// just a URL. Fall back to the env binding if set.
+	const userKey =
+		c.req.header("x-canlii-token")?.trim() ||
+		c.req.query("token")?.trim() ||
+		c.req.query("canlii_token")?.trim();
 	const effectiveKey = userKey || c.env.CANLII_API;
 	if (!effectiveKey) {
 		return c.json(
 			{
 				error:
-					"No CanLII API key. Send 'X-CanLII-Token: <key>' on every MCP request, or bind CANLII_API on the worker.",
+					"No CanLII API key. Provide it as an 'X-CanLII-Token: <key>' header or a '?token=<key>' URL parameter on every MCP request, or bind CANLII_API on the worker.",
 			},
 			401,
 		);
