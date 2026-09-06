@@ -6,6 +6,8 @@ An [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server for th
 
 > **Note:** The CanLII API provides metadata only — titles, citations, dates, keywords, and citation relationships. Full document text is not available through the API.
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/GQtnwxf8nQ)
+
 ## Use the hosted endpoint (no install)
 
 ```
@@ -214,3 +216,7 @@ Pushing to `main` triggers the release workflow. If a release is cut, the Docker
 ## License
 
 MIT
+
+## Community
+
+Questions, ideas, or want to contribute? Join the Vaquill community on [Discord](https://discord.gg/GQtnwxf8nQ).
