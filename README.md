@@ -23,7 +23,7 @@ The hosted instance is public. No Vaquill token is required. Provide your own Ca
   https://canlii-mcp.vaquill.ai/mcp?token=YOUR_CANLII_API_KEY
   ```
 
-Apply for a key at [canlii.org/en/api/](https://www.canlii.org/en/feedback/feedback.html). The server never stores your key, and there is no server-side fallback key, so every call counts against your own CanLII quota.
+Apply for a key via the [CanLII API request form](https://www.canlii.org/en/feedback/feedback.html). The server never stores your key, and there is no server-side fallback key, so every call counts against your own CanLII quota.
 
 ### Claude Desktop / Claude Code
 
@@ -179,7 +179,7 @@ The MCP endpoint will be at `https://canlii-mcp.<your-subdomain>.workers.dev/mcp
 
 | Environment Variable | Required | Default | Description |
 |---------------------|----------|---------|-------------|
-| `CANLII_API` | Yes | — | Your CanLII API key |
+| `CANLII_API` | Only for stdio and self-hosted single-tenant | — | Your CanLII API key. Not needed in HTTP mode, where clients bring their own key per request. |
 | `PORT` | No | `3000` | HTTP server port (HTTP mode only) |
 | `MCP_AUTH_TOKEN` | No | — | Bearer token for HTTP authentication. If set, all HTTP requests must include `Authorization: Bearer <token>`. If not set, the server runs without authentication. |
 

@@ -15,14 +15,14 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer token gating access to the hosted CanLII MCP endpoint. Format: 'Bearer <token>'.",
-          "isRequired": true,
+          "description": "Optional. Only for self-hosted deployments that set MCP_AUTH_TOKEN. The public hosted endpoint at canlii-mcp.vaquill.ai does not use it, so leave this blank. Format: 'Bearer <token>'.",
+          "isRequired": false,
           "isSecret": true,
           "format": "string"
         },
         {
           "name": "X-CanLII-Token",
-          "description": "Your CanLII API key. Apply for one at https://www.canlii.org/en/feedback/feedback.html. The server never stores your key.",
+          "description": "Your CanLII API key. Apply for one at https://www.canlii.org/en/feedback/feedback.html. Header-less clients can instead append ?token=<key> to the endpoint URL. The server never stores your key.",
           "isRequired": true,
           "isSecret": true,
           "format": "string"

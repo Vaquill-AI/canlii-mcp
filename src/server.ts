@@ -100,6 +100,17 @@ function releaseSlot(apiKey: string) {
 
 const BASE_URL = "https://api.canlii.org/v1";
 
+// Percent-encode one path segment before it goes into a request URL.
+//
+// databaseId, caseId and legislationId arrive as free strings from the model,
+// and interpolating them raw lets a value containing "..", "?" or "#" rewrite
+// which CanLII endpoint is called. A caseId of "../../../legislationBrowse/en"
+// silently resolved to /v1/legislationBrowse/en/ and returned a confident
+// answer from the wrong resource rather than an error. The api_key is not
+// exposed by this (searchParams.set overwrites any injected api_key), so the
+// bug is endpoint confusion, not credential leakage.
+const seg = (value: string): string => encodeURIComponent(value);
+
 async function canliiRequest(
 	apiKey: string,
 	path: string,
@@ -163,7 +174,7 @@ export function createServer(apiKey: string): McpServer {
 		},
 		async ({ language }) => {
 			try {
-				return ok(await request(`/caseBrowse/${language}/`));
+				return ok(await request(`/caseBrowse/${seg(language)}/`));
 			} catch (e) {
 				return err(String(e));
 			}
@@ -228,7 +239,7 @@ export function createServer(apiKey: string): McpServer {
 				if (publishedAfter) params.publishedAfter = publishedAfter;
 				if (decisionDateBefore) params.decisionDateBefore = decisionDateBefore;
 				if (decisionDateAfter) params.decisionDateAfter = decisionDateAfter;
-				return ok(await request(`/caseBrowse/${language}/${databaseId}/`, params));
+				return ok(await request(`/caseBrowse/${seg(language)}/${seg(databaseId)}/`, params));
 			} catch (e) {
 				return err(String(e));
 			}
@@ -251,7 +262,7 @@ export function createServer(apiKey: string): McpServer {
 		},
 		async ({ language, databaseId, caseId }) => {
 			try {
-				return ok(await request(`/caseBrowse/${language}/${databaseId}/${caseId}/`));
+				return ok(await request(`/caseBrowse/${seg(language)}/${seg(databaseId)}/${seg(caseId)}/`));
 			} catch (e) {
 				return err(String(e));
 			}
@@ -280,7 +291,9 @@ export function createServer(apiKey: string): McpServer {
 		},
 		async ({ databaseId, caseId, citationType }) => {
 			try {
-				return ok(await request(`/caseCitator/en/${databaseId}/${caseId}/${citationType}`));
+				return ok(
+					await request(`/caseCitator/en/${seg(databaseId)}/${seg(caseId)}/${seg(citationType)}`),
+				);
 			} catch (e) {
 				return err(String(e));
 			}
@@ -300,7 +313,7 @@ export function createServer(apiKey: string): McpServer {
 		},
 		async ({ language }) => {
 			try {
-				return ok(await request(`/legislationBrowse/${language}/`));
+				return ok(await request(`/legislationBrowse/${seg(language)}/`));
 			} catch (e) {
 				return err(String(e));
 			}
@@ -325,7 +338,7 @@ export function createServer(apiKey: string): McpServer {
 		},
 		async ({ language, databaseId }) => {
 			try {
-				return ok(await request(`/legislationBrowse/${language}/${databaseId}/`));
+				return ok(await request(`/legislationBrowse/${seg(language)}/${seg(databaseId)}/`));
 			} catch (e) {
 				return err(String(e));
 			}
@@ -350,7 +363,11 @@ export function createServer(apiKey: string): McpServer {
 		},
 		async ({ language, databaseId, legislationId }) => {
 			try {
-				return ok(await request(`/legislationBrowse/${language}/${databaseId}/${legislationId}/`));
+				return ok(
+					await request(
+						`/legislationBrowse/${seg(language)}/${seg(databaseId)}/${seg(legislationId)}/`,
+					),
+				);
 			} catch (e) {
 				return err(String(e));
 			}
