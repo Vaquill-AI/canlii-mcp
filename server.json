@@ -3,7 +3,7 @@
   "name": "io.github.Vaquill-AI/canlii-mcp",
   "title": "CanLII",
   "description": "MCP for CanLII: Canadian case law and legislation metadata (federal, provincial, territorial).",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": {
     "url": "https://github.com/Vaquill-AI/canlii-mcp",
     "source": "github"
